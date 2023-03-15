@@ -4,7 +4,8 @@ import java.util.List;
 
 public class ScheduleDTO {
 
-	public static class CourseDTO {
+   
+   public static class CourseDTO {
 
 		public int id;
 		public int course_id;
@@ -85,6 +86,40 @@ public class ScheduleDTO {
 		
 		
 	}
+
+   public String student_name;
+   public static class StudentDTO{
+      public String student_email;
+      public String student_name;
+      public int student_id;
+
+
+      @Override
+      public String toString() {
+         return "StudentDTO [student_email=" + student_email + ", student_name= " + student_name + ", student_id=" + student_id + ",  ]";
+      }
+
+      @Override
+      public boolean equals(Object obj) {
+         if (this == obj)
+            return true;
+         if (obj == null)
+            return false;
+         if (getClass() != obj.getClass())
+            return false;
+         ScheduleDTO other = (ScheduleDTO) obj;
+         if (student_email == null) {
+            if (other.student_email != null)
+               return false;
+         } else if (!student_email.equals(other.student_email))
+            return false;
+         if (student_id != other.student_id)
+            return false;
+         if (student_name != other.student_name)
+            return false;
+         return true;
+      }
+   }
 
 	public String student_email;
 	public int student_id;
