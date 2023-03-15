@@ -1,4 +1,5 @@
 -- script file to create and load tables for registration service.
+DROP SCHEMA IF EXISTS register;
 create schema register;
 
 use register;
