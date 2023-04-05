@@ -3,6 +3,7 @@ package com.cst438.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,12 +19,14 @@ import com.cst438.domain.Enrollment;
 import com.cst438.domain.EnrollmentDTO;
 import com.cst438.domain.EnrollmentRepository;
 import com.cst438.domain.ScheduleDTO;
-import com.cst438.domain.ScheduleDTO.StudentDTO;
+import com.cst438.domain.StudentDTO;
 import com.cst438.domain.Student;
 import com.cst438.domain.StudentRepository;
 import com.cst438.service.GradebookService;
+import com.cst438.service.GradebookService;
 
 @RestController
+@CrossOrigin(origins= {"http://localhost:3000"})
 public class StudentController {
    
    @Autowired
@@ -35,7 +38,7 @@ public class StudentController {
    @Autowired
    EnrollmentRepository enrollmentRepository;
    
-   @Autowired
+   @Autowired(required=false)
    GradebookService gradebookService;
    /*
     * AS ADMIN
@@ -45,32 +48,46 @@ public class StudentController {
     */
    
    @PostMapping("/addStudent")
-   @Transactional
-   public StudentDTO addStudent( @RequestParam("studentEmail") String studentEmail, @RequestParam("studentName") String studentName ) {
-      Student student = studentRepository.findByEmail(studentEmail);
+
+   public StudentDTO addStudent(@RequestBody StudentDTO dto) {
+      Student student = studentRepository.findByEmail(dto.student_email);
  
       // student.status
       // = 0  ok to register
       // != 0 hold on registration.  student.status may have reason for hold.
-         if (student!= null && student != student) {
+         if (student== null) {
           
             Student students = new Student();
-            students.setName(studentName);
-            students.setEmail(studentEmail);
-            Student savedStudent = studentRepository.save(students);
+            students.setName(dto.student_name);
+            students.setEmail(dto.student_email);
+            students.setStatus(dto.status);
+            students.setStatusCode(dto.statusCode);
+            students = studentRepository.save(students);
+            dto.id=students.getStudent_id();
+            return dto;
             
-            gradebookService.enrollStudent(studentEmail, students.getName(), students.getStudent_id());
-            
-            ScheduleDTO.StudentDTO result = createStudentDTO(savedStudent);
-            return result;
+            //StudentDTO result = createStudentDTO(savedStudent);
+            //return result;
          } else {
-            throw  new ResponseStatusException( HttpStatus.BAD_REQUEST, "Student_id invalid or student not allowed to register in the system.  ");
+            throw  new ResponseStatusException( HttpStatus.BAD_REQUEST, "Student email already exists  ");
          }
          
    }
-
-   private ScheduleDTO.StudentDTO createStudentDTO(Student s) {
-      ScheduleDTO.StudentDTO studentDTO = new ScheduleDTO.StudentDTO();
+//   @PostMapping("/addStudent/{studentEmail}")
+//   @Transactional
+//   public StudentDTO addStudent2(@PathVariable("student_email") String student_email) {
+//      Student s = studentRepository.findByEmail(student_email);
+//      if(s==null) {
+//         Student ss = new Student();
+//         ss.setName(student_name);
+//         ss.setEmail(student_email);
+//         ss.setStatus(student_email)
+//      }
+//   }
+//  
+//
+   private StudentDTO createStudentDTO(Student s) {
+      StudentDTO studentDTO = new StudentDTO();
       //Student sS = s.Enrollment.getStudent();
       studentDTO.student_id = s.getStudent_id();
       studentDTO.student_email = s.getEmail();
@@ -83,26 +100,26 @@ public class StudentController {
     * Put student registration on HOLD
     * POST OR PUT
     */
-   @PutMapping("/addStudent/{statusCode}")
+   @PutMapping("/addStudent/{studentEmail}")
    @Transactional
-   public StudentDTO addHold( @RequestParam("studentEmail") String studentEmail  ) { 
-      Student student = studentRepository.findByEmail(studentEmail);
+   public StudentDTO addHold( @PathVariable("student_email") String student_email  ) { 
+      Student student = studentRepository.findByEmail(student_email);
       
       // student.status
       // = 0  ok to register
       // != 0 hold on registration.  student.status may have reason for hold.
       
          
-         Enrollment enrollment = new Enrollment();
-         enrollment.setStudent(student);
-         Student st = new Student();
-         st.setStatusCode(1);
-         Student savedStudent = studentRepository.save(st);
+      // Enrollment enrollment = new Enrollment();
+      // enrollment.setStudent(student);
+    //   Student st = new Student();
+         student.setStatusCode(0);
+         Student savedStudent = studentRepository.save(student);
          
-         gradebookService.enrollStudent(studentEmail, student.getName(), student.getStatusCode());
+         //gradebookService.enrollStudent(studentEmail, student.getName(), student.getStatusCode());
          
       
-      ScheduleDTO.StudentDTO result = createStudentDTO(savedStudent);
+      StudentDTO result = createStudentDTO(savedStudent);
       return result;
    
    }
@@ -111,9 +128,20 @@ public class StudentController {
     * release the HOLD on student registration
     * PUT/PATCH
     */
-   @DeleteMapping("/addStudent/{statusCode}")
+   @PutMapping("/addStudent/{studentEmail")
    @Transactional
-   public void dropHold(  @PathVariable int statusCode, @RequestParam("studentEmail") String studentEmail  ) {
+   public StudentDTO changeHold( @PathVariable("studentEmail") String studentEmail ) {
+      Student student = studentRepository.findByEmail(studentEmail);
+      student.setStatusCode(1);
+      Student savedStudent = studentRepository.save(student);
+      
+      StudentDTO result = createStudentDTO(savedStudent);
+      return result;
+   }
+   //delete's student
+   @DeleteMapping("/addStudent/{studentEmail}")
+   @Transactional
+   public void dropStudent( @PathVariable("studentEmail") String studentEmail  ) {
       
       
       
@@ -122,12 +150,13 @@ public class StudentController {
       Student student = studentRepository.findByEmail(studentEmail);
       
       // verify that student is enrolled in the school
-      if (student!=null && student.getEmail().equals(studentEmail)) {
+      if (student!=null) {
          // OK.  drop the hold
           studentRepository.delete(student);
       } else {
          // something is not right with the enrollment.  
-         throw  new ResponseStatusException( HttpStatus.BAD_REQUEST, "StatusCode invalid. "+statusCode);
+         throw  new ResponseStatusException( HttpStatus.BAD_REQUEST, "Student not found. ");
       }
    }
+   //create new method put for updating the hold
 }
