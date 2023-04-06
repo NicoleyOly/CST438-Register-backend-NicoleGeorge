@@ -20,8 +20,24 @@ public class GradebookServiceREST extends GradebookService {
 	@Override
 	public void enrollStudent(String student_email, String student_name, int course_id) {
 		
-		//TODO  complete this method in homework 4
-		
+		//TODO  When a student adds a class, send POST message to Gradebook backend
+	   //using EnrollmentDTO 
+	   
+	  //use postForObject method on restTemplate 
+	   
+	   //restTemplate.postForObject(URL, Object, EnrollmentDTO.class);
+	   
+//	   EnrollmentDTO enrollment = new EnrollmentDTO();
+//	   enrollment.course_id = course_id;
+//	   enrollment.studentEmail = student_email;
+//	   enrollment.studentName = student_name;
+//	   
+//	   System.out.println("Post to gradebook "+enrollment);
+//	   EnrollmentDTO response = restTemplate.postForObject(gradebook_url+"/enrollment", enrollment, EnrollmentDTO.class);
+//	   System.out.print("Response from gradebook "+response);
+	   
+	   EnrollmentDTO result = restTemplate.postForObject(gradebook_url + "/enrollment", new EnrollmentDTO(student_email, student_name, course_id), EnrollmentDTO.class);
+	   System.out.println("POST student enrollment to gradebook." + result.id + " " + result.studentEmail + " " + result.course_id);
 	}
 
 }
